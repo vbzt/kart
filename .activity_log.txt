@@ -45,3 +45,4 @@
 [2025-02-11T11:53:28-03:00] refactor: update pipe for better consistency
 [2025-02-11T13:56:10-03:00] ajustes finos
 [2025-02-11T13:57:30-03:00] feat(webhook): implement data persistence validation
+[2025-02-16T13:46:06-03:00] chore(api): add docker configuration
