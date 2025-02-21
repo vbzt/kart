@@ -3,3 +3,4 @@
 [2025-02-11T13:56:10-03:00] ajustes finos
 [2025-02-11T13:57:30-03:00] feat(webhook): implement data persistence validation
 [2025-02-16T13:46:06-03:00] chore(api): add docker configuration
+[2025-02-21T07:52:28-03:00] refactor: improve service structure
