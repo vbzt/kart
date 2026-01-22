@@ -6,3 +6,4 @@
 [2025-02-21T07:52:28-03:00] refactor: improve service structure
 [2026-01-03T01:02:00-03:00] feat: implement search functionality with JWT
 [2026-01-03T22:05:09-03:00] fix(webhook): adjust module for edge case
+[2026-01-22T00:34:42-03:00] feat(webhook): add pagination functionality
