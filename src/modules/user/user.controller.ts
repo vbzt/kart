@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { EditUserDTO } from './dto/edit-user.dto';
 import { AdminGuard } from 'src/common/guards/admin.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { ParamId } from 'src/common/decorators/param-id.decorator';
 
 @UseGuards(JwtAuthGuard, AdminGuard)
 @Controller('users')
@@ -16,17 +17,17 @@ export class UserController {
   }
 
   @Get('/:id')
-  async readOne(@Param('id') id: string ){ 
+  async readOne(@ParamId(new ParseUUIDPipe({ version: "4"})) id: string ){ 
     return this.userService.readOne(id)
   }
 
   @Patch('/:id')
-  async update(@Param('id') id: string, @Body() data: EditUserDTO ){ 
+  async update(@ParamId(new ParseUUIDPipe({ version: "4"})) id: string, @Body() data: EditUserDTO ){ 
     return this.userService.update(data, id)
   }
 
   @Delete('/:id')
-  async delete(@Param('id') id: string){ 
+  async delete(@ParamId(new ParseUUIDPipe({ version: "4"})) id: string){ 
     return this.userService.delete(id)
   }
 }
