@@ -34,8 +34,7 @@ export class UserService {
   }
 
   async delete(id: string){ 
-    const user = await this.readOne(id)
-    if(!user) throw new NotFoundException("Este usuário não existe")
+    await this.readOne(id)
     const deletedUser =  await this.prismaService.user.delete({ where: { id } } )
     return deletedUser 
   }
