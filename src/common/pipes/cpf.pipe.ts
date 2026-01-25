@@ -34,7 +34,7 @@ export class CpfPipe implements PipeTransform {
     const isValid = dv1 === cleanCpfArray[9] && dv2 === cleanCpfArray[10]
     if(!isValid) throw new BadRequestException("CPF inválido.")
 
-    return cleanCpf    
+    return { ...value, cpf: cleanCpf}    
 
   }
 

@@ -8,13 +8,15 @@ import { ResetPasswordDTO } from './dto/reset-password.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtUserPayload } from 'src/common/types/jwt-payload';
+import { CpfPipe } from 'src/common/pipes/cpf.pipe';
+import { Phonepipe } from 'src/common/pipes/phone.pipe';
 
 @Controller('auth')
 export class AuthController {
   constructor( private readonly authService: AuthService){}
 
   @Post('/register')
-  async signUp(@Body() signUpData: SignUpDTO, @Res({ passthrough: true }) response: Response){
+  async signUp(@Body(CpfPipe, Phonepipe) signUpData: SignUpDTO, @Res({ passthrough: true }) response: Response){
     const data = await this.authService.signUp(signUpData)
     response.cookie('refresh_token', data.refresh_token, { 
       httpOnly: true, 

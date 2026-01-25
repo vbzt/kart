@@ -14,9 +14,8 @@ export class AuthService {
 
     async signUp( signUpData: SignUpDTO ){ 
       if(signUpData.password !== signUpData.confirmPassword) throw new BadRequestException("As senhas não coincidem.")
-
       const { data, error } = await supabase.auth.signUp( { email: signUpData.email, password: signUpData.password } )
-
+     
       if(error) handleSupabaseError(error)
       if(!data.user?.email) throw new BadRequestException('Falha ao criar usuário. Tente novamente mais tarde.')
       
