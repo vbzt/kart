@@ -26,6 +26,7 @@
     "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.7",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^6.19.1",
     "@prisma/client-runtime-utils": "^7.2.0",
     "@supabase/ssr": "^0.8.0",
