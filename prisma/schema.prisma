@@ -44,7 +44,7 @@ model Service {
   promotionalPrice Decimal?  @db.Decimal(10, 2)
   isPromotional    Boolean   @default(false)
   durationMinutes  Int
-  maxCapacity      Int       @default(5)
+  maxCapacity      Int       @default(4)
   priceType        PriceType @default(INDIVIDUAL)
   isActive         Boolean   @default(true)
 
