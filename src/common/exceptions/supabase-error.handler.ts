@@ -19,6 +19,10 @@ export function handleSupabaseError(supabaseError: any){
     throw new UnauthorizedException('Sessão expirada')
   }
 
+  if (message?.includes('rate limit')) {
+  throw new BadRequestException('Muitas tentativas. Aguarde alguns minutos.')
+}
+
   throw new BadRequestException(supabaseError.message || 'Erro ao enviar requisição')
 
 }
