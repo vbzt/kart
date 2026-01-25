@@ -41,6 +41,7 @@ export class AuthController {
     return cleanData
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('/logout')
   async signOut(@Res({ passthrough: true }) response: Response){ 
     const data = await this.authService.signOut()
