@@ -53,3 +53,4 @@
 [2026-01-22T17:27:27-03:00] feat: enhance decorator with filtering system
 [2026-01-22T22:35:57-03:00] ajustes finos
 [2026-01-26T03:54:52-03:00] feat: controller now supports webhook integration
+[2026-01-26T22:15:15-03:00] feat: add logging system to middleware
