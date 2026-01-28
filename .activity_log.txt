@@ -14,3 +14,4 @@
 [2026-01-27T04:46:29-03:00] fix(database): adjust guard for connection issue
 [2026-01-27T16:55:51-03:00] feat(booking): create pagination handler
 [2026-01-28T09:01:42-03:00] feat(auth): create user authentication handler
+[2026-01-28T13:42:59-03:00] refactor: reorganize repository logic
