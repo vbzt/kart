@@ -60,3 +60,4 @@
 [2026-01-28T13:42:59-03:00] refactor: reorganize repository logic
 [2026-01-28T22:14:04-03:00] feat(security): add API endpoint functionality
 [2026-01-29T03:47:50-03:00] fix: patch null reference in interceptor
+[2026-01-29T13:27:44-03:00] feat: add file upload endpoint
