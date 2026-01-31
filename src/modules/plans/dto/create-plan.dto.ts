@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator"
+import { IsArray, IsBoolean, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from "class-validator"
 
 export class CreatePlanDTO{ 
   
@@ -13,7 +13,7 @@ export class CreatePlanDTO{
   @Min(2)
   creditsPerMonth: number
 
-  @IsNumber()
+  @IsInt()
   @Min(1)
   price: number
 
@@ -21,4 +21,10 @@ export class CreatePlanDTO{
   @IsOptional()
   @IsBoolean()
   isActive: boolean 
+
+  @IsArray()
+  @MinLength(1)
+  @IsUUID('4', { each: true })
+  servicesIds: string[]
+
 }

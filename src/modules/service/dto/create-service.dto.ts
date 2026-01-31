@@ -1,5 +1,5 @@
 import { PriceType } from "@prisma/client";
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class CreateServiceDTO{ 
   @IsString()
@@ -9,12 +9,12 @@ export class CreateServiceDTO{
   @IsString()
   description: string
 
-  @IsNumber()
+  @IsInt()
   @Min(1)
   price: number
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(1)
   promotionalPrice: number
 
@@ -26,7 +26,7 @@ export class CreateServiceDTO{
   @Min(10)
   durationMinutes: number
 
-  @IsNumber()
+  @IsInt()
   @Min(1)
   @Max(10)
   maxCapacity: number
