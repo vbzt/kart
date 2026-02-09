@@ -1,18 +1,24 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
 import { CreateBusinessHourDTO } from './dto/create-business-hour.dto';
 import { CreateBlockedPeriodDTO } from './dto/create-blocked-period.dto';
 import { EditBusinessHourDTO } from './dto/edit-business-hour.dto';
 import { ParamId } from 'src/common/decorators/param-id.decorator';
 import { EditBlockPeriodDTO } from './dto/edit-blocked-period.dto';
+import { AvailabilityDTO } from './dto/availability.dto';
 
 @Controller('availability')
 export class AvailabilityController {
   constructor(private readonly availabilityService: AvailabilityService){}
 
+  @Get()
+  async read(@Query() data: AvailabilityDTO){ 
+    return this.availabilityService.getAvailability(data)
+  }
+
   @Get('/business-hours')
   async readBusinessHours(){ 
-    return this.availabilityService.readBusinessHours
+    return this.availabilityService.readBusinessHours()
   }
 
   @Post('/business-hours')
