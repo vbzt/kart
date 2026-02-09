@@ -12,14 +12,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt'){
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false, 
             algorithms: ['ES256'],
-            issuer: 'https://bvyyohemxkievjowtsyi.supabase.co/auth/v1',
+            issuer: 'https://rwjnoyxdlhbihnqatoqy.supabase.co/auth/v1',
             audience: 'authenticated',
 
             secretOrKeyProvider: jwksRsa.passportJwtSecret({
                 cache: true,
                 rateLimit: true,
                 jwksRequestsPerMinute: 5,
-                jwksUri: 'https://bvyyohemxkievjowtsyi.supabase.co/auth/v1/.well-known/jwks.json',
+                jwksUri: 'https://rwjnoyxdlhbihnqatoqy.supabase.co/auth/v1/.well-known/jwks.json',
                 requestHeaders: {}
             })
         })
