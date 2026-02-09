@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from "class-validator"
+import { IsArray, IsBoolean, IsInt, IsNumber, IsOptional, IsString, IsUUID, Min, MinLength } from "class-validator"
 
 export class CreatePlanDTO{ 
   
@@ -15,7 +15,7 @@ export class CreatePlanDTO{
 
   @IsInt()
   @Min(1)
-  price: number
+  priceCents: number
 
   
   @IsOptional()
