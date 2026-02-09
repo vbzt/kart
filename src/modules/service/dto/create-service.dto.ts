@@ -11,12 +11,12 @@ export class CreateServiceDTO{
 
   @IsInt()
   @Min(1)
-  price: number
+  priceCents: number
 
   @IsOptional()
   @IsInt()
   @Min(1)
-  promotionalPrice: number
+  promotionalPriceCents: number
 
   @IsOptional()
   @IsBoolean()
