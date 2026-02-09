@@ -4,9 +4,15 @@ import { AppService } from './app.service';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { PlansModule } from './modules/plans/plans.module';
+import { ServiceModule } from './modules/service/service.module';
+import { AbacateModule } from './modules/abacate/abacate.module';
+import { AvailabilityModule } from './modules/availability/availability.module';
+import { BookingModule } from './modules/booking/booking.module';
+import { CouponModule } from './modules/coupon/coupon.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UserModule],
+  imports: [PrismaModule, AuthModule, UserModule, PlansModule, ServiceModule, AbacateModule, BookingModule, CouponModule, AvailabilityModule],
   controllers: [AppController],
   providers: [AppService],
 })
