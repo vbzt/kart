@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCouponDTO } from './dto/create-coupon.dto';
 import { EditCouponDTO } from './dto/edit-coupon.dto';
+import { DiscountType } from '@prisma/client';
 
 @Injectable()
 export class CouponService {
@@ -38,5 +39,17 @@ export class CouponService {
   async delete(code:string){
     await this.readOne(code)
     await this.prismaService.coupon.delete({ where: { code }})
+  }
+
+
+  async useCoupon(price: number, couponCode: string){ 
+    const coupon = await this.readOne(couponCode)
+    if(!coupon.isActive) throw new BadRequestException("Cupom inválido.")
+    await this.prismaService.coupon.update({ where: { code: couponCode }, data: { currentUses: { increment: 1 } } } )
+    if (coupon.discountType === DiscountType.FIXED) {
+      return { finalPrice: Math.max(0, price - coupon.discountValue), discount: coupon.discountValue }
+    }
+    const discount = price * (coupon.discountValue / 100)
+    return { finalPrice: Math.max(0, price - discount), discount}
   }
 }
