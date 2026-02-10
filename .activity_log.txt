@@ -69,3 +69,4 @@
 [2026-02-06T16:09:46-03:00] deploy
 [2026-02-10T04:45:52-03:00] refactor: improve controller structure
 [2026-02-10T08:12:06-03:00] feat: add email notifications to interceptor
+[2026-02-10T10:12:04-03:00] fix: resolve validation error in module
