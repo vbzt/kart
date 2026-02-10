@@ -27,3 +27,4 @@
 [2026-02-10T04:45:52-03:00] refactor: improve controller structure
 [2026-02-10T08:12:06-03:00] feat: add email notifications to interceptor
 [2026-02-10T10:12:04-03:00] fix: resolve validation error in module
+[2026-02-10T13:14:34-03:00] fix: controller null reference resolution
