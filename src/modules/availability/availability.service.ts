@@ -9,6 +9,7 @@ import { ServiceService } from '../service/service.service';
 import { addMinutes, isAfter, isBefore, setHours, setMinutes} from 'date-fns'
 import { BookingStatus } from '@prisma/client';
 import { AvailabilitySlot } from 'src/common/types/slot';
+import { ReadSlotDTO } from './dto/read-slot.dto';
 
 @Injectable()
 export class AvailabilityService {
@@ -113,6 +114,49 @@ export class AvailabilityService {
   }
   
   return slots 
+  }
+
+  async readSlot({ bookingDate, bookingTime, numberOfPeople, serviceId}: ReadSlotDTO){ 
+    const [year, month, day] = bookingDate.split('-').map(Number)
+    const localDate = new Date(year, month - 1, day)
+    
+    const service = await this.serviceService.readOne(serviceId)
+    const dayOfWeek = localDate.getDay()
+
+    const businessHour = await this.prismaService.businessHour.findUnique({ where: { dayOfWeek } })
+    if(!businessHour || !businessHour.isOpen ) return false 
+
+    const openTime = setMinutes(setHours(localDate, businessHour.openTime.getHours()), businessHour.openTime.getMinutes())
+    const closeTime = setMinutes(setHours(localDate, businessHour.closeTime.getHours()), businessHour.closeTime.getMinutes())
+    const slotEnd = addMinutes(bookingTime, service.durationMinutes)
+
+    if(isBefore(bookingTime, openTime) || isAfter(slotEnd, closeTime)) return false
+
+    console.log(localDate)
+    const overlappingBookings = await this.prismaService.booking.findMany({ 
+      where: { 
+        bookingDate: localDate,
+        
+        status: { in: ['PENDING', 'CONFIRMED'] },
+        AND: [
+          { bookingTime: { lt: slotEnd} },
+          { service: { durationMinutes: { gte: 0 } } }
+        ]
+      },
+      select: { numberOfPeople: true, bookingTime: true, service: { select: { durationMinutes: true } } }
+    })
+
+
+    let usedKarts = 0 
+    for(const booking of overlappingBookings){ 
+      const bookingEnd = addMinutes(booking.bookingTime, booking.service.durationMinutes)
+      const overlaps = isBefore(booking.bookingTime, slotEnd) && isAfter(bookingEnd, bookingTime)
+      if(overlaps) {
+        usedKarts += booking.numberOfPeople
+      }
+    }
+    const availableKarts = this.TOTAL_KARTS - usedKarts
+    return availableKarts >= numberOfPeople
   }
 
 
