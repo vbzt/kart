@@ -1,4 +1,4 @@
-import { BookingStatus, ExperienceLevel } from "@prisma/client";
+import { BookingStatus, ExperienceLevel, PaymentType } from "@prisma/client";
 import { Type } from "class-transformer";
 import { IsDate, IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from "class-validator";
 
@@ -23,21 +23,6 @@ export class CreateBookingDTO{
   status: BookingStatus
 
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  originalPriceCents: number
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  discountCents: number
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  finalPriceCents: number
-
-  @IsOptional()
   @IsString()
   couponCode: string
 
@@ -52,5 +37,8 @@ export class CreateBookingDTO{
   @IsOptional()
   @IsString()
   notes: string  
+
+  @IsEnum(PaymentType)
+  paymentType: PaymentType
 
 }
