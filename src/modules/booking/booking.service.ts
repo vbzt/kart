@@ -6,9 +6,10 @@ import { ServiceService } from '../service/service.service';
 import { CouponService } from '../coupon/coupon.service';
 import { isEqual } from 'date-fns';
 import { AbacateService } from '../abacate/abacate.service';
-import { DiscountType } from '@prisma/client';
+import { BookingStatus, DiscountType, Service, User } from '@prisma/client';
 import { UserService } from '../user/user.service';
 import { BookingModule } from './booking.module';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class BookingService {
@@ -18,43 +19,81 @@ export class BookingService {
         private readonly serviceService: ServiceService,
         private readonly couponService: CouponService,
         private readonly abacateService: AbacateService,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        private readonly subscriptionService: SubscriptionService
     ){}
 
 
-    async create(data: CreateBookingDTO, userId: string){ 
-        const service = await this.serviceService.readOne(data.serviceId)
-        const availabilitySlots = await this.availabilityService.getAvailability({ serviceId: data.serviceId, date: data.bookingDate })
-        if(availabilitySlots.length === 0) throw new BadRequestException("Data indisponível.") 
-        const slot = availabilitySlots.find(s => isEqual(s.startTime, data.bookingTime))
-        if (!slot || slot.availableKarts < data.numberOfPeople) throw new BadRequestException('Horário indisponível.')
+    async create(data: CreateBookingDTO, userId: string ){ 
+        const [service, user, { hasActiveSubscription, subscription}] = await Promise.all([ this.serviceService.readOne(data.serviceId), this.userService.readOne(userId), this.subscriptionService.readActiveSubscription(userId) ])
+        const isSlotAvailable = await this.availabilityService.readSlot({bookingDate: data.bookingDate, bookingTime: data.bookingTime, numberOfPeople: data.numberOfPeople, serviceId: data.serviceId})
+        if (!isSlotAvailable) throw new BadRequestException('Horário indisponível.')
+            
 
-        const [year, month, day] = data.bookingDate.split('-').map(Number)
-        const bookingDateAsDate = new Date(year, month - 1, day)
+        if(data.paymentType === 'DEPOSIT'){ 
+            const result = await this.createBookingPayment(data, service, user)
+            return { 
+                message: "Agendamento criado. Aguardando confirmação do pagamento.", 
+                payment: result.abacatePayment
+            }
+        }
         
-        
-        const price = service.priceCents * data.numberOfPeople
-        data.originalPriceCents = price
-        data.finalPriceCents = price
-
-        if(data.couponCode){ 
-            const discountValue = await this.couponService.useCoupon( price, data.couponCode )
-            data.discountCents = discountValue.discount
-            data.finalPriceCents = discountValue.finalPrice 
+        if(hasActiveSubscription && subscription && subscription.bookingsRemaining > 0 && data.numberOfPeople === 1){
+            
         }
 
-        const user = await this.userService.readOne(userId)
-        const abacatePayment = await this.abacateService.createPayment( {   
-            customer: { cellphone: user.phone, email: user.email, name: user.name, taxId: user.cpf}, 
-            price: data.finalPriceCents
-         })
-
-        const booking = await this.prismaService.booking.create( { data: { ...data, bookingDate: bookingDateAsDate,  userId } } )
-        const payment = await this.prismaService.payment.create( { data: { amountCents: data.finalPriceCents, bookingId: booking.id, paymentType: 'DEPOSIT', provider: "abacatepay", providerPaymentId: abacatePayment.data.id ,qrCodeUrl: abacatePayment.data.brCodeBase64, paymentUrl: abacatePayment.data.brCode}})
-        return { message: "Agendamento será criado após confirmação do pagamento.", payment: abacatePayment}
+        
     }
         
+    private async createBookingPayment(data: CreateBookingDTO, service: Service, user: User){ 
+        let finalPrice = service.priceCents * data.numberOfPeople
+        let discount = 0
 
+        if(data.couponCode){ 
+            const discountValue = await this.couponService.useCoupon( finalPrice, data.couponCode )
+            discount = discountValue.discount
+            finalPrice = discountValue.finalPrice 
+        }
+        const result = await this.prismaService.$transaction(async (tx) => {
+    
+            const booking = await tx.booking.create({ 
+                data: {  
+                    ...data,  
+                    bookingDate: this.parseDate(data.bookingDate),
+                     userId: user.id, originalPriceCents: service.priceCents * data.numberOfPeople, 
+                     finalPriceCents: finalPrice, 
+                     discountCents: discount, 
+                     status: BookingStatus.PENDING 
+                }
+            })
+
+            const abacatePayment = await this.abacateService.createPayment({   
+                customer: { 
+                  cellphone: user.phone, 
+                  email: user.email, 
+                  name: user.name, 
+                  taxId: user.cpf
+                }, 
+                price: finalPrice
+            })
+
+            const payment = await tx.payment.create({ 
+                data: { 
+                  amountCents: finalPrice, 
+                  bookingId: booking.id, 
+                  paymentType: data.paymentType, 
+                  provider: "abacatepay", 
+                  providerPaymentId: abacatePayment.data.id,
+                  qrCodeUrl: abacatePayment.data.brCodeBase64, 
+                  paymentUrl: abacatePayment.data.brCode,
+                  createdBy: user.id
+                }
+            })
+
+            return { booking, payment, abacatePayment }
+        })
+        return result
+    }
 
     async calculateBookingDiscount(bookingPrice: number, couponCode: string){ 
         const coupon = await this.couponService.readOne(couponCode)
@@ -63,5 +102,12 @@ export class BookingService {
             return bookingPrice - coupon.discountValue
         }
     }
+
+    private parseDate(dateStr: string): Date {
+        const [year, month, day] = dateStr.split('-').map(Number)
+        return new Date(year, month - 1, day)
+    }
+
+    
 
 }
