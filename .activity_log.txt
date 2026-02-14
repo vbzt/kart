@@ -30,3 +30,4 @@
 [2026-02-10T13:14:34-03:00] fix: controller null reference resolution
 [2026-02-14T00:09:19-03:00] feat: add webhook integration endpoint
 [2026-02-14T09:50:53-03:00] pequeno ajuste
+[2026-02-14T13:46:42-03:00] chore: update project dependencies
