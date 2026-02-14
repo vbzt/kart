@@ -10,7 +10,7 @@ export class AdminGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean>{ 
     const req = context.switchToHttp().getRequest()
     const user = req.user 
-    const { role } = await this.userService.readOne(user.id)
+    const { role } = await this.userService.readOne(user.userId)
     if (role !== UserRole.ADMIN) return false 
     return true 
 
