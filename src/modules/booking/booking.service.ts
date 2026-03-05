@@ -1,15 +1,14 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { CreateBookingDTO } from './dto/create-booking.dto';
 import { ServiceService } from '../service/service.service';
 import { CouponService } from '../coupon/coupon.service';
-import { isEqual } from 'date-fns';
 import { AbacateService } from '../abacate/abacate.service';
-import { BookingStatus, DiscountType, Service, User } from '@prisma/client';
+import { BookingStatus, DiscountType, Service, Subscription, User } from '@prisma/client';
 import { UserService } from '../user/user.service';
-import { BookingModule } from './booking.module';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { JwtUserPayload } from 'src/common/types/jwt-payload';
 
 @Injectable()
 export class BookingService {
@@ -25,7 +24,7 @@ export class BookingService {
 
 
     async create(data: CreateBookingDTO, userId: string ){ 
-        const [service, user, { hasActiveSubscription, subscription}] = await Promise.all([ this.serviceService.readOne(data.serviceId), this.userService.readOne(userId), this.subscriptionService.readActiveSubscription(userId) ])
+        const [service, user] = await Promise.all([ this.serviceService.readOne(data.serviceId), this.userService.readOne(userId), this.subscriptionService.readActiveSubscription(userId) ])
         const isSlotAvailable = await this.availabilityService.readSlot({bookingDate: data.bookingDate, bookingTime: data.bookingTime, numberOfPeople: data.numberOfPeople, serviceId: data.serviceId})
         if (!isSlotAvailable) throw new BadRequestException('Horário indisponível.')
             
@@ -37,12 +36,18 @@ export class BookingService {
                 payment: result.abacatePayment
             }
         }
-        
-        if(hasActiveSubscription && subscription && subscription.bookingsRemaining > 0 && data.numberOfPeople === 1){
-            
-        }
 
         
+    }
+
+    async readOne(id:string){ 
+        const booking = await this.prismaService.booking.findUnique({ where: { id }})
+        if(!booking) throw new NotFoundException("Este agendamento não existe.")
+        return booking 
+    }
+
+    async readUserBookings(user: JwtUserPayload){ 
+        return await this.prismaService.booking.findMany({ where: { userId: user.userId }})
     }
         
     private async createBookingPayment(data: CreateBookingDTO, service: Service, user: User){ 
@@ -106,6 +111,26 @@ export class BookingService {
     private parseDate(dateStr: string): Date {
         const [year, month, day] = dateStr.split('-').map(Number)
         return new Date(year, month - 1, day)
+    }
+
+    async createBookingWithCredits(subscription: Subscription, user: JwtUserPayload, data: CreateBookingDTO){  
+        if (subscription.creditsTotal === 0) throw new BadRequestException('Os créditos desta inscrição estão esgotados.')
+        if (data.numberOfPeople !== 1) throw new BadRequestException('Reservas com créditos permitem apenas 1 pessoa.')
+
+        const isSlotAvailable = await this.availabilityService.readSlot({bookingDate: data.bookingDate, bookingTime: data.bookingTime, numberOfPeople: data.numberOfPeople, serviceId: data.serviceId})
+        if (!isSlotAvailable) throw new BadRequestException('Horário indisponível.')
+        
+        const result = await this.prismaService.$transaction(async (tx) => { 
+            const booking = await tx.booking.create({ data: { bookingDate: data.bookingDate, bookingTime: data.bookingTime, serviceId: data.serviceId, numberOfPeople: data.numberOfPeople, status: 'PAID', userId: user.userId, subscriptionId: subscription.id }})
+            await tx.creditTransaction.create({ data: { type: 'USE', bookingId: booking.id, subscriptionId: subscription.id }})
+            await tx.subscription.update({ where: { id: subscription.id }, data: { creditsTotal: { decrement: 1 } } } )
+            
+            return booking
+        })
+
+        return result
+        
+        
     }
 
     
