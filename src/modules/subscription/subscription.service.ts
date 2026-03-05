@@ -57,9 +57,6 @@ export class SubscriptionService {
 
   }
 
-  async createBookingWithCredits(service: Service, subscription: Subscription ){ 
-
-  }
 
   async read(){ 
     return this.prismaService.subscription.findMany()
