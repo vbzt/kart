@@ -13,8 +13,17 @@ import { ReadSlotDTO } from './dto/read-slot.dto';
 
 @Injectable()
 export class AvailabilityService {
-  constructor(private readonly prismaService: PrismaService, private readonly serviceService: ServiceService){ }
-  private TOTAL_KARTS = 6;
+  private TOTAL_KARTS: number;
+  constructor(private readonly prismaService: PrismaService, private readonly serviceService: ServiceService){ 
+    const rawTotalKarts = process.env.TOTAL_KARTS
+    const totalKarts = Number(rawTotalKarts)
+
+    if(!rawTotalKarts || Number.isNaN(totalKarts)) {
+      throw new Error('TOTAL_KARTS deve ser um número válido.')
+    }
+
+    this.TOTAL_KARTS = totalKarts
+  }
   private readonly SLOT_DURATION_MINUTES = 15;
 
   async readBusinessHours(){
