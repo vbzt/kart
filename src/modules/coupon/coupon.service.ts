@@ -50,6 +50,6 @@ export class CouponService {
       return { finalPrice: Math.max(0, price - coupon.discountValue), discount: coupon.discountValue }
     }
     const discount = price * (coupon.discountValue / 100)
-    return { finalPrice: Math.max(0, price - discount), discount}
+    return { finalPrice: Math.max(0, price - discount), discount, success: true}
   }
 }
