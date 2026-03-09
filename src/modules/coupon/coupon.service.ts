@@ -45,11 +45,13 @@ export class CouponService {
   async useCoupon(price: number, couponCode: string){ 
     const coupon = await this.readOne(couponCode)
     if(!coupon.isActive) throw new BadRequestException("Cupom inválido.")
+    if(coupon.maxUses && coupon.currentUses >= coupon.maxUses) throw new BadRequestException("Cupom atingiu o limite de uso.")
+    
     await this.prismaService.coupon.update({ where: { code: couponCode }, data: { currentUses: { increment: 1 } } } )
     if (coupon.discountType === DiscountType.FIXED) {
       return { finalPrice: Math.max(0, price - coupon.discountValue), discount: coupon.discountValue }
     }
     const discount = price * (coupon.discountValue / 100)
-    return { finalPrice: Math.max(0, price - discount), discount, success: true}
+    return { finalPrice: Math.max(0, price - discount), discount}
   }
 }
