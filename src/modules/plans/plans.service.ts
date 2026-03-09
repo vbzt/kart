@@ -21,8 +21,10 @@ export class PlansService {
     })
   }
 
-  async read(){ 
-    return this.prismaService.plan.findMany()
+  async read({ isActive }: { isActive?: boolean } = {}){ 
+    return this.prismaService.plan.findMany({
+      where: typeof isActive === 'boolean' ? { isActive } : undefined,
+    })
   }
 
   async readOne(id: string){ 
