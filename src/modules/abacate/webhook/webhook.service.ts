@@ -7,23 +7,70 @@ export class WebhookService {
   constructor(private readonly prismaService: PrismaService, ){}
 
   async updatePayment(payload: any){ 
-        const payment = await this.prismaService.payment.findFirst({ where: { providerPaymentId: payload.data.pixQrCode.id } })
-        if(!payment) return 
-        
-        if(payment.bookingId){ 
-          const updatedBooking = await this.prismaService.booking.update({ where: { id: payment.bookingId }, data: { status: 'CONFIRMED' } } )
-          const updatedPayment = await this.prismaService.payment.update( { where: { id: payment.id }, data: { status: 'PAID' } } )
-          console.log(`Booking ${updatedBooking.id} pago. Atualizado com sucesso.`)
-        }
-        
-        if(payment.subscriptionId){ 
-          const date = new Date(Date.now()) 
-          const updatedSubscription = await this.prismaService.subscription.update({ 
-            where: { id: payment.subscriptionId },
-            data: { startDate: date, endDate: addMonths(date, 1), status: 'ACTIVE' }
+        const providerPaymentId = payload?.data?.pixQrCode?.id
+        if(!providerPaymentId) return { received: true }
+
+        return await this.prismaService.$transaction(async (tx) => {
+          const payment = await tx.payment.findFirst({
+            where: { provider: 'abacatepay', providerPaymentId }
           })
-          const updatedPayment = await this.prismaService.payment.update({ where: { id: payment.id }, data: { status: 'PAID' } } )
-          console.log(`Inscrição ${updatedSubscription.id} paga. Atualizada com sucesso.`)
-        }
+
+          // Sempre ACK 200 para o gateway (mesmo se o pagamento não existir localmente).
+          if(!payment) return { received: true, ignored: true }
+
+          // Idempotência: fixa um "momento canônico" do pagamento (paidAt) na primeira vez.
+          // Retries não devem mexer nas datas de assinatura.
+          await tx.payment.updateMany({
+            where: {
+              id: payment.id,
+              OR: [{ status: { not: 'PAID' } }, { paidAt: null }],
+            },
+            data: { status: 'PAID', paidAt: new Date() }
+          })
+
+          const freshPayment = await tx.payment.findUnique({ where: { id: payment.id } })
+          const paidAt = freshPayment?.paidAt ?? new Date()
+
+          if(payment.bookingId){ 
+            const updated = await tx.booking.updateMany({
+              where: { id: payment.bookingId, status: 'PENDING' },
+              data: { status: 'CONFIRMED' }
+            })
+            if(updated.count > 0) {
+              console.log(`Booking ${payment.bookingId} pago. Atualizado com sucesso.`)
+            }
+          }
+          
+          if(payment.subscriptionId){ 
+            const subscription = await tx.subscription.findUnique({ where: { id: payment.subscriptionId } })
+            if(subscription){
+              const nextStart = subscription.startDate ?? paidAt
+              const nextEnd = subscription.endDate ?? addMonths(nextStart, 1)
+
+              const data: { status: 'ACTIVE'; startDate?: Date; endDate?: Date } = { status: 'ACTIVE' }
+              if(!subscription.startDate) data.startDate = nextStart
+              if(!subscription.endDate) data.endDate = nextEnd
+
+              const updated = await tx.subscription.updateMany({
+                where: {
+                  id: payment.subscriptionId,
+                  status: { not: 'CANCELLED' },
+                  OR: [
+                    { status: { not: 'ACTIVE' } },
+                    { startDate: null },
+                    { endDate: null },
+                  ]
+                },
+                data
+              })
+
+              if(updated.count > 0) {
+                console.log(`Inscrição ${payment.subscriptionId} paga. Atualizada com sucesso.`)
+              }
+            }
+          }
+
+          return { received: true }
+        })
   }
 }

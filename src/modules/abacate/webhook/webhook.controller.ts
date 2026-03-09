@@ -1,6 +1,4 @@
 import { Body, Controller, Post, Query, UnauthorizedException } from '@nestjs/common';
-import { addDays, addMonths } from 'date-fns';
-import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { WebhookService } from './webhook.service';
 
 @Controller('webhook/abacatepay')
@@ -23,5 +21,6 @@ export class WebhookController {
     if(payload.event === 'billing.paid'){ 
       return await this.webhookService.updatePayment(payload)
     }
+    return { received: true }
   }
 }

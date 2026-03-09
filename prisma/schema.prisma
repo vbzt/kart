@@ -184,6 +184,7 @@ model Payment {
   @@index([subscriptionId])
   @@index([status])
   @@index([provider, providerPaymentId])
+  @@unique([provider, providerPaymentId])
 }
 
 enum PaymentStatus {
