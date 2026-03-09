@@ -16,6 +16,12 @@ export class ServiceService {
     return this.prismaService.service.findMany()
   }
 
+  
+
+  async readActive(){
+    return this.prismaService.service.findMany({ where: { isActive: true } })
+  }
+
   async readOne(id: string){ 
     const service = await this.prismaService.service.findUnique( { where: { id } } )
     if(!service) throw new NotFoundException("Este serviço não existe.")
