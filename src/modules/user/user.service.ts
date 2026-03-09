@@ -24,6 +24,24 @@ export class UserService {
     return user
   }
 
+  async readMe(userId: string){
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        cpf: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+    if(!user) throw new NotFoundException("Este usuário não existe.")
+    return user
+  }
+
   async update( data: EditUserDTO, id: string ){ 
     if(data.email){
       const existingUser = await this.readOne(data.email)
