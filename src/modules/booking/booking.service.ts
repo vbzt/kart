@@ -23,7 +23,7 @@ export class BookingService {
     ){}
 
 
-    async create(data: CreateBookingDTO, userId: string ){ 
+    async create(data: CreateBookingDTO, { email, userId, role}: JwtUserPayload ){ 
         const [service, user] = await Promise.all([ this.serviceService.readOne(data.serviceId), this.userService.readOne(userId), this.subscriptionService.readActiveSubscription(userId) ])
         const isSlotAvailable = await this.availabilityService.readSlot({bookingDate: data.bookingDate, bookingTime: data.bookingTime, numberOfPeople: data.numberOfPeople, serviceId: data.serviceId})
         if (!isSlotAvailable) throw new BadRequestException('Horário indisponível.')
@@ -35,6 +35,12 @@ export class BookingService {
                 message: "Agendamento criado. Aguardando confirmação do pagamento.", 
                 payment: result.abacatePayment
             }
+        }
+
+        if(data.paymentType === 'SUBSCRIPTION'){ 
+            const subscription = await this.prismaService.subscription.findFirst({ where: { userId: user.id, status: 'ACTIVE' }})
+            if(!subscription) throw new BadRequestException('Você não tem uma inscrição ativa.')
+            await this.createBookingWithCredits(subscription, { email, userId, role }, data)
         }
 
         
@@ -128,7 +134,7 @@ export class BookingService {
             return booking
         })
 
-        return result
+        return { result, message: "Agendamento criado." }
         
         
     }
