@@ -17,7 +17,7 @@ export class BookingController {
 
   @Get('/my-bookings')
   async readUserBookings(@CurrentUser() user: JwtUserPayload){ 
-
+    return this.bookingService.readUserBookings(user)
   }
 
   @Get("/:id")
@@ -27,7 +27,7 @@ export class BookingController {
 
   @Post('')
   async create(@Body() data: CreateBookingDTO, @CurrentUser() user: JwtUserPayload ){ 
-    return this.bookingService.create(data, user.userId)
+    return this.bookingService.create(data, user)
   }
 
   @UseGuards(SubscriptionGuard)
