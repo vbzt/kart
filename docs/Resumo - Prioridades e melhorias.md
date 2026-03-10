@@ -19,7 +19,7 @@ Sugestões de evolução com base na análise módulo a módulo.
 | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | ✅Disponibilidade: tirar TOTAL_KARTS de constante (config/env ou tabela) e documentar; alinhar quais status de booking consomem capacidade | [[Availability]]                 |
 | ✅Cupom: validar vigência e uso dentro da mesma transação do booking (ou compensação em falha)                                             | [[Coupon]], [[Booking]]          |
-| Endpoints “públicos” ou para cliente: listar planos ativos, listar serviços ativos, perfil do usuário (ex.: GET /users/me)                | [[Plans]], [[Service]], [[User]] |
+| ✅Endpoints “públicos” ou para cliente: listar planos ativos, listar serviços ativos, perfil do usuário (ex.: GET /users/me)               | [[Plans]], [[Service]], [[User]] |
 
 ## Prioridade baixa
 
