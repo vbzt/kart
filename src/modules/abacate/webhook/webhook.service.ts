@@ -15,11 +15,8 @@ export class WebhookService {
             where: { provider: 'abacatepay', providerPaymentId }
           })
 
-          // Sempre ACK 200 para o gateway (mesmo se o pagamento não existir localmente).
           if(!payment) return { received: true, ignored: true }
 
-          // Idempotência: fixa um "momento canônico" do pagamento (paidAt) na primeira vez.
-          // Retries não devem mexer nas datas de assinatura.
           await tx.payment.updateMany({
             where: {
               id: payment.id,
@@ -44,8 +41,8 @@ export class WebhookService {
           if(payment.subscriptionId){ 
             const subscription = await tx.subscription.findUnique({ where: { id: payment.subscriptionId } })
             if(subscription){
-              const nextStart = subscription.startDate ?? paidAt
-              const nextEnd = subscription.endDate ?? addMonths(nextStart, 1)
+              const nextStart = paidAt
+              const nextEnd = addMonths(nextStart, 1)
 
               const data: { status: 'ACTIVE'; startDate?: Date; endDate?: Date } = { status: 'ACTIVE' }
               if(!subscription.startDate) data.startDate = nextStart

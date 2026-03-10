@@ -51,12 +51,47 @@ export class SubscriptionService {
 
       })
 
-      return { message: "Plano adquirido. Aguardando confirmação de pagamento "}
+      return { message: "Plano adquirido. Aguardando confirmação de pagamento", payment: result.abacatePayment}
       
       
 
   }
 
+  async renew(subscriptionId: string, userId: string){ 
+    const user = await this.userService.readOne(userId)
+    const subscription = await this.readOne(subscriptionId, userId)
+    if(!subscription) throw new BadRequestException()
+    const result = await this.prismaService.$transaction(async (tx) => { 
+      const abacatePayment = await this.abacateService.createPayment({ 
+      price: subscription.plan.priceCents, 
+      customer:{ 
+        cellphone: user.phone,
+        email: user.email,
+        name: user.name,
+        taxId: user.cpf
+      }})
+
+      
+
+      const payment = await tx.payment.create({ 
+        data: { 
+          amountCents: subscription.plan.priceCents, 
+          subscriptionId: subscription.id, 
+          paymentType: 'DEPOSIT', 
+          provider: "abacatepay", 
+          providerPaymentId: abacatePayment.data.id,
+          qrCodeUrl: abacatePayment.data.brCodeBase64, 
+          paymentUrl: abacatePayment.data.brCode,
+          createdBy: user.id
+        }
+      })
+
+      return { subscription, payment, abacatePayment }
+
+    })
+    return { message: "Plano renovado com sucesso. Aguardando confirmação de pagamento", payment: result.abacatePayment }
+
+  }
 
   async read(){ 
     return this.prismaService.subscription.findMany()
