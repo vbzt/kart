@@ -8,6 +8,11 @@ tags: [kart, módulo, subscription, assinatura, créditos]
 
 Assinaturas mensais: criar assinatura (escolher plano), pagar via PIX; após confirmação no webhook [[Abacate]], assinatura fica ativa com créditos. Créditos são usados em [[Booking]] (rota `POST /booking/subscription`). SubscriptionGuard protege rotas que exigem assinatura ativa.
 
+### Uso típico
+
+1. Cliente autenticado chama `GET /subscription/active` para verificar se tem assinatura ativa e ver créditos/datas.
+2. Com assinatura ativa, cria reservas usando `POST /booking/subscription` (fluxo protegido por `SubscriptionGuard` e que debita créditos em vez de gerar um novo PIX).
+
 ## Localização
 
 `src/modules/subscription/`

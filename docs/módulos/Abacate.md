@@ -19,6 +19,9 @@ Pagamentos PIX via AbacatePay: criação de cobrança e recebimento de webhook p
 ## Submódulo Webhook
 
 - `POST /webhook/abacatepay` – recebe eventos do AbacatePay; em `billing.paid` atualiza Payment e confirma booking ou ativa assinatura (startDate/endDate, status ACTIVE).
+- Implementado de forma **idempotente**:
+  - Localiza `Payment` por `providerPaymentId` e só altera registros ainda não marcados como pagos.
+  - Atualiza `Booking` e `Subscription` apenas quando o pagamento muda efetivamente de estado, ignorando reenvios do mesmo evento.
 
 ## Arquivos
 

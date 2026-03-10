@@ -33,6 +33,11 @@ Acesso ao banco de dados e definição do schema (PostgreSQL).
 - **BlockedPeriod** – períodos bloqueados (datas e horários)
 - **Setting** – chave/valor para configurações
 
+### Uso do modelo Setting
+
+- Armazena configurações globais do sistema em formato chave/valor (ex.: capacidade padrão de karts, limites de agendamento, flags de negócio).
+- Permite mover constantes de código (como capacidade total de karts) para o banco, facilitando ajustes sem deploy.
+
 ## Enums
 
 - UserRole, PriceType, BookingStatus, ExperienceLevel

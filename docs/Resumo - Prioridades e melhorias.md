@@ -26,6 +26,9 @@ Sugestões de evolução com base na análise módulo a módulo.
 | O quê | Onde |
 |-------|------|
 | Cancelamento de reserva e de assinatura; política de renovação e recarga de créditos; soft delete se precisar de auditoria | [[Booking]], [[Subscription]], [[Prisma]] |
+| Documentar exemplo de uso típico da assinatura: cliente verifica `/subscription/active` e em seguida cria booking em `/booking/subscription` | [[Subscription]], [[Booking]] |
+| Detalhar na doc do Abacate que o webhook já trata idempotência e ignora pagamentos já processados (atualização segura de Payment/Booking/Subscription) | [[Abacate]] |
+| Criar nota ou subseção explicando uso esperado de `Setting` para configurações globais (ex.: capacidade padrão de karts, flags de negócio) | [[Prisma]] |
 
 ## Ver também
 
