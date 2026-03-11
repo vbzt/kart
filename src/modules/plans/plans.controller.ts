@@ -29,22 +29,22 @@ export class PlansController {
     return this.plansService.readOne(id)
   }
 
-  @Post()
   @UseGuards(AdminGuard)
+  @Post()
   async create(@Body() data: CreatePlanDTO){ 
     return this.plansService.create(data)
   }
 
 
-  @Patch('/:id')
   @UseGuards(AdminGuard)
+  @Patch('/:id')
   async update(@Body() data: EditPlanDTO, @ParamId(new ParseUUIDPipe({ version: '4' })) id: string){ 
     return this.plansService.update(data, id)
   }
 
   
-  @Delete('/:id')
   @UseGuards(AdminGuard)
+  @Delete('/:id')
   async delete(@ParamId(new ParseUUIDPipe({ version: '4' })) id: string){ 
     return this.plansService.remove(id)
   }
