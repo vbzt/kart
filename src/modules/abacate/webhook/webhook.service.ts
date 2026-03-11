@@ -1,12 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { addMonths } from 'date-fns';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
+import crypto from "node:crypto";
 
 @Injectable()
 export class WebhookService {
-  constructor(private readonly prismaService: PrismaService, ){}
+  private abacateKey
+  constructor(private readonly prismaService: PrismaService){
+    const abacateKey = process.env.ABACATE_WEBHOOK_SECRET;
 
-  async updatePayment(payload: any){ 
+    if (!abacateKey) {
+      throw new Error('Chave da API AbacatePay não definida.')
+    }
+    this.abacateKey = abacateKey
+  }
+
+  async updatePayment(payload: any, rawBody: string){ 
         const providerPaymentId = payload?.data?.pixQrCode?.id
         if(!providerPaymentId) return { received: true }
 
@@ -69,5 +78,21 @@ export class WebhookService {
 
           return { received: true }
         })
-  }
+  } 
+
+  verifyAbacateSignature(rawBody: string, signatureFromHeader: string) {
+    const bodyBuffer = Buffer.from(rawBody, "utf8")
+
+    const expectedSig = crypto
+      .createHmac("sha256", this.abacateKey)
+      .update(bodyBuffer)
+      .digest("base64");
+
+    const A = Buffer.from(expectedSig);
+    const B = Buffer.from(signatureFromHeader);
+
+    return A.length === B.length && crypto.timingSafeEqual(A, B);
+}
+
+
 }

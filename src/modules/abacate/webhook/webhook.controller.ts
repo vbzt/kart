@@ -1,5 +1,6 @@
-import { Body, Controller, Post, Query, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Headers, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { WebhookService } from './webhook.service';
+import type { Request } from 'express';
 
 @Controller('webhook/abacatepay')
 export class WebhookController {
@@ -16,10 +17,13 @@ export class WebhookController {
   }
 
   @Post() 
-  async webhook(@Query('webhookSecret') webhookSecret: string, @Body() payload: any){
-    if(webhookSecret !== this.abacateKey) throw new UnauthorizedException("Invalid webhook secret.")
+  async webhook(@Query('webhookSecret') webhookSecret: string, @Req() req: Request, @Headers('x-webhook-signature') signature: string,){
+    if(webhookSecret !== this.abacateKey) throw new UnauthorizedException()
+    const rawBody = (req as any).rawBody.toString()
+    if(!this.webhookService.verifyAbacateSignature(rawBody, signature)) throw new UnauthorizedException()
+     const payload = JSON.parse(rawBody)
     if(payload.event === 'billing.paid'){ 
-      return await this.webhookService.updatePayment(payload)
+      return await this.webhookService.updatePayment(payload, rawBody)
     }
     return { received: true }
   }
