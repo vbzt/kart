@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import AbacatePay from 'abacatepay-nodejs-sdk';
 import { CreatePixDTO } from './dto/create-pix.dto';
+import { JwtUserPayload } from 'src/common/types/jwt-payload';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AbacateService {
   private abacate
 
-  constructor() {
+  constructor(private readonly userService: UserService) {
     const abacateKey = process.env.ABACATE_KEY;
 
     if (!abacateKey) {
@@ -16,7 +18,8 @@ export class AbacateService {
     this.abacate = AbacatePay(abacateKey)
   }
 
- async createPayment(data: CreatePixDTO) {
+ async createPayment({ amount }: CreatePixDTO, user: JwtUserPayload) {
+  const customer = await this.userService.readOne(user.userId)
   const response = await fetch(
     'https://api.abacatepay.com/v1/pixQrCode/create',
     {
@@ -26,13 +29,13 @@ export class AbacateService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: data.price,
+        amount,
         expiresIn: 900,
         customer: {
-          name: data.customer.name,
-          email: data.customer.email,
-          cellphone: data.customer.cellphone,
-          taxId: data.customer.taxId,
+          name: customer.name,
+          email: customer.email,
+          cellphone: customer.phone,
+          taxId: customer.cpf,
         },
       }),
     },
