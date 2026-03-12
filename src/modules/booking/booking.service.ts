@@ -46,8 +46,8 @@ export class BookingService {
         
     }
 
-    async readOne(id:string){ 
-        const booking = await this.prismaService.booking.findUnique({ where: { id }})
+    async readOne(id:string, userId: string){ 
+        const booking = await this.prismaService.booking.findUnique({ where: { id, userId }})
         if(!booking) throw new NotFoundException("Este agendamento não existe.")
         return booking 
     }
@@ -78,15 +78,7 @@ export class BookingService {
                 }
             })
 
-            const abacatePayment = await this.abacateService.createPayment({   
-                customer: { 
-                  cellphone: user.phone, 
-                  email: user.email, 
-                  name: user.name, 
-                  taxId: user.cpf
-                }, 
-                price: finalPrice
-            })
+            const abacatePayment = await this.abacateService.createPayment({ amount: finalPrice }, { email: user.email,  userId: user.id, role: user.role})
 
             const payment = await tx.payment.create({ 
                 data: { 
