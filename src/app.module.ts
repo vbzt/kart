@@ -25,8 +25,12 @@ import { APP_GUARD } from '@nestjs/core';
     CouponModule,
     AvailabilityModule,
     ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 30,
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 30,
+        },
+      ],
     }),
   ],
   controllers: [AppController],
