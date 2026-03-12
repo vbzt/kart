@@ -1,6 +1,3 @@
----
-tags: [kart, resumo, prioridades, melhorias]
----
 ## Auditoria de Segurança - 2026-03-12
 
 ### ⚠️ Problemas Críticos Encontrados
