@@ -1,6 +1,7 @@
 import { Body, Controller, Headers, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import type { Request } from 'express';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('webhook/abacatepay')
 export class WebhookController {
@@ -16,6 +17,7 @@ export class WebhookController {
     
   }
 
+  @SkipThrottle()
   @Post() 
   async webhook(@Query('webhookSecret') webhookSecret: string, @Req() req: Request, @Headers('x-webhook-signature') signature: string,){
     if(webhookSecret !== this.abacateKey) throw new UnauthorizedException()

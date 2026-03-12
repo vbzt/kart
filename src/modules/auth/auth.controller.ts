@@ -10,11 +10,13 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtUserPayload } from 'src/common/types/jwt-payload';
 import { CpfPipe } from 'src/common/pipes/cpf.pipe';
 import { Phonepipe } from 'src/common/pipes/phone.pipe';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor( private readonly authService: AuthService){}
 
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('/register')
   async signUp(@Body(CpfPipe, Phonepipe) signUpData: SignUpDTO, @Res({ passthrough: true }) response: Response){
     const data = await this.authService.signUp(signUpData)
@@ -28,6 +30,7 @@ export class AuthController {
     return cleanData
   }
   
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('/login')
   async signIn(@Body() signInData: LoginDTO, @Res({ passthrough: true }) response: Response){
     const data = await this.authService.signIn(signInData)
@@ -49,6 +52,7 @@ export class AuthController {
     return data.message
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('/refresh')
   async refreshSession(@Res({passthrough: true}) response: Response, @Req() request: Request){
     const refreshToken = request.cookies['refresh_token']

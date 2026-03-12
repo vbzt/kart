@@ -4,12 +4,14 @@ import { AbacateService } from './abacate.service';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtUserPayload } from 'src/common/types/jwt-payload';
+import { Throttle } from '@nestjs/throttler';
 
 @UseGuards(JwtAuthGuard)
 @Controller('gateway/abacatepay')
 export class AbacateController {
   constructor(private readonly abacateService: AbacateService){}
 
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post()
   async createPix(@Body() data: CreatePixDTO, @CurrentUser() user: JwtUserPayload){ 
     return await this.abacateService.createPayment(data, user)

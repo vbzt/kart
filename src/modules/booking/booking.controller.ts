@@ -8,6 +8,7 @@ import { SubscriptionGuard } from 'src/common/guards/subscription.guard';
 import { CurrentSubscription } from 'src/common/decorators/current-subscription';
 import type { Subscription, User } from '@prisma/client';
 import { ParamId } from 'src/common/decorators/param-id.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 
 @UseGuards(JwtAuthGuard)
@@ -21,16 +22,18 @@ export class BookingController {
   }
 
   @Get("/:id")
-  async readOne(@ParamId() id: string){ 
-    return this.bookingService.readOne(id)
+  async readOne(@ParamId() id: string, @CurrentUser('userId') userId: string){ 
+    return this.bookingService.readOne(id, userId)
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('')
   async create(@Body() data: CreateBookingDTO, @CurrentUser() user: JwtUserPayload ){ 
     return this.bookingService.create(data, user)
   }
 
   @UseGuards(SubscriptionGuard)
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post("/subscription")
   async createBookingWithSubscription(@CurrentUser() user: JwtUserPayload, @CurrentSubscription() subscription: Subscription, @Body() data: CreateBookingDTO  ){
     return this.bookingService.createBookingWithCredits(subscription, user, data)

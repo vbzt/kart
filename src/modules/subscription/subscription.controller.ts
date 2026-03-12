@@ -7,6 +7,7 @@ import { ParamId } from 'src/common/decorators/param-id.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { SubscriptionGuard } from 'src/common/guards/subscription.guard';
 import { CurrentSubscription } from 'src/common/decorators/current-subscription';
+import { Throttle } from '@nestjs/throttler';
 
 @UseGuards(JwtAuthGuard)
 @Controller('subscription')
@@ -14,12 +15,14 @@ export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService){}
 
   
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('')
   async create(@Body() data: CreateSubscriptionDTO, @CurrentUser() user: JwtUserPayload){ 
       return this.subscriptionService.create(data, user.userId)
   }
 
   @UseGuards(SubscriptionGuard)
+  @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('/renew')
   async renew(@CurrentSubscription('id') subscriptionId: string, @CurrentUser('userId') userId: string ){ 
     return this.subscriptionService.renew(subscriptionId, userId)
