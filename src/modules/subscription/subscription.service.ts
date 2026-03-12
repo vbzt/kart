@@ -23,14 +23,7 @@ export class SubscriptionService {
       if(activeSubscription) throw new BadRequestException("Este usuário já tem um plano mensal ativo.")
       
       const result = await this.prismaService.$transaction(async (tx) => { 
-        const abacatePayment = await this.abacateService.createPayment({ 
-        price: plan.priceCents, 
-        customer:{ 
-          cellphone: user.phone,
-          email: user.email,
-          name: user.name,
-          taxId: user.cpf
-        }})
+        const abacatePayment = await this.abacateService.createPayment({ amount: plan.priceCents}, { email: user.email,  userId: user.id, role: user.role})
 
         const subscription = await tx.subscription.create({ data: { creditsTotal: plan.creditsPerMonth, userId, planId } })
 
@@ -62,14 +55,7 @@ export class SubscriptionService {
     const subscription = await this.readOne(subscriptionId, userId)
     if(!subscription) throw new BadRequestException()
     const result = await this.prismaService.$transaction(async (tx) => { 
-      const abacatePayment = await this.abacateService.createPayment({ 
-      price: subscription.plan.priceCents, 
-      customer:{ 
-        cellphone: user.phone,
-        email: user.email,
-        name: user.name,
-        taxId: user.cpf
-      }})
+      const abacatePayment = await this.abacateService.createPayment({ amount: subscription.plan.priceCents}, { email: user.email,  userId: user.id, role: user.role})
 
       
 
