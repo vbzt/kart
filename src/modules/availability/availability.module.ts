@@ -3,9 +3,10 @@ import { AvailabilityService } from './availability.service';
 import { AvailabilityController } from './availability.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ServiceModule } from '../service/service.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [PrismaModule, ServiceModule],
+  imports: [PrismaModule, ServiceModule, UserModule],
   providers: [AvailabilityService],
   controllers: [AvailabilityController],
   exports: [AvailabilityService]
