@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/Resumo - Prioridades e melhorias.md",
+                "file": "docs/rls-report.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Resumo - Prioridades e melhorias"
+              "title": "rls-report"
             }
           }
         ]
@@ -185,17 +185,21 @@
   },
   "active": "f754ef32d421f383",
   "lastOpenFiles": [
-    "node_modules/ecdsa-sig-formatter/src/ecdsa-sig-formatter.d.ts",
-    "node_modules/ecdsa-sig-formatter/src/param-bytes-for-alg.js",
-    "node_modules/ecdsa-sig-formatter/src/ecdsa-sig-formatter.js",
-    "node_modules/ecdsa-sig-formatter/src",
-    "dist/app.controller.js",
-    "node_modules/prisma/query_engine-windows.dll.node",
-    "node_modules/prisma/query_engine-windows.dll.node.tmp18224",
-    "node_modules/@angular-devkit/schematics/node_modules/rxjs/dist/cjs/internal/scheduled/scheduleReadableStreamLike.js.map",
-    "node_modules/@angular-devkit/schematics/node_modules/rxjs/dist/cjs/internal/scheduled/schedulePromise.js",
-    "node_modules/@angular-devkit/schematics/node_modules/rxjs/dist/cjs/internal/scheduled/scheduleReadableStreamLike.js",
-    "node_modules/@angular-devkit/schematics/node_modules/rxjs/dist/cjs/internal/scheduled/scheduleIterable.js",
+    "dist/common/decorators/param-id.decorator.d.ts",
+    "dist/common/decorators/param-id.decorator.js",
+    "dist/common/decorators/param-id.decorator.js.map",
+    "dist/common/guards/admin.guard.d.ts",
+    "dist/common/guards/admin.guard.js",
+    "dist/common/guards/admin.guard.js.map",
+    "dist/modules/abacate/dto/create-pix.dto.js",
+    "dist/modules/abacate/dto/create-pix.dto.js.map",
+    "dist/modules/abacate/dto/create-pix.dto.d.ts",
+    "dist/modules/abacate/webhook/webhook.service.js.map",
+    "dist/modules/abacate/webhook/webhook.service.js",
+    "docs/Resumo - Prioridades e melhorias.md",
+    "docs/rls-report.md",
+    "outputs/rls-report.md",
+    "docs/resumo-e-pendencias.md",
     "node_modules/date-fns/SECURITY.md",
     "node_modules/date-fns/README.md",
     "node_modules/date-fns/LICENSE.md",
@@ -219,10 +223,6 @@
     "node_modules/@prisma/fetch-engine/README.md",
     "node_modules/ts-loader/REFERENCES.md",
     "node_modules/ts-loader/README.md",
-    "node_modules/foreground-child/README.md",
-    "node_modules/ts-loader/CHANGELOG.md",
-    "node_modules/chardet/README.md",
-    "node_modules/@nestjs/throttler/README.md",
     "node_modules/tsconfig-paths-webpack-plugin/coverage/lcov-report/sort-arrow-sprite.png",
     "node_modules/tsconfig-paths-webpack-plugin/coverage/lcov-report/favicon.png",
     "node_modules/istanbul-reports/lib/html-spa/assets/sort-arrow-sprite.png",

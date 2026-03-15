@@ -20,6 +20,7 @@ tags: [kart, resumo, prioridades, melhorias]
 - `helmet()` habilitado globalmente e acesso ao Supabase feito apenas no backend.
 
 ### 📋 Checklist de Pendências
+- [ ] **Configurar RLS (Row Level Security) no Supabase** nas tabelas do banco, para camada extra de segurança mesmo com acesso via Prisma/backend.
 - [ ] Endurecer ainda mais regras de autorização em endpoints que retornam dados sensíveis, se necessário.
 - [ ] Documentar política de CORS e cookies específica para produção.
 - [ ] Criar/ajustar testes automatizados para cobrir cenários de autenticação, autorização e rate limiting.
