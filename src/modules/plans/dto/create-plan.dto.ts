@@ -23,7 +23,6 @@ export class CreatePlanDTO{
   isActive: boolean 
 
   @IsArray()
-  @MinLength(1)
   @IsUUID('4', { each: true })
   servicesIds: string[]
 
