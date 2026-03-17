@@ -5,7 +5,7 @@ import { PlansService } from '../plans/plans.service';
 import { AbacateService } from '../abacate/abacate.service';
 import { UserService } from '../user/user.service';
 import { Service, Subscription, SubscriptionStatus } from '@prisma/client';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, isBefore, toDate } from 'date-fns';
 
 @Injectable()
 export class SubscriptionService {
@@ -91,7 +91,12 @@ export class SubscriptionService {
 
   async readActiveSubscription(userId: string){ 
     const subscription = await  this.prismaService.subscription.findFirst( { where: { userId, status: "ACTIVE" }, include: { plan: true, payments: { select: { paidAt: true } } } } )
+    
     if(!subscription) return { hasActiveSubscription: false }
+    if(subscription.endDate && isBefore(subscription.endDate, Date.now())){
+        await this.prismaService.subscription.update({ where: { id: subscription.id }, data: { status:'EXPIRED' } } )
+        return { message: `Sua inscrição expirou no dia ${subscription.endDate}.`, hasActiveSubscription: false }
+    }
     
     return { 
       hasActiveSubscription: true,
