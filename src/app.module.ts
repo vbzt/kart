@@ -12,6 +12,7 @@ import { BookingModule } from './modules/booking/booking.module';
 import { CouponModule } from './modules/coupon/coupon.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { APP_GUARD } from '@nestjs/core';
     BookingModule,
     CouponModule,
     AvailabilityModule,
+    AdminModule,
     ThrottlerModule.forRoot({
       throttlers: [
         {
