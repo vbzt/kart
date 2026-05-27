@@ -1,4 +1,4 @@
-import { BadRequestException, CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { SubscriptionService } from 'src/modules/subscription/subscription.service';
 
 @Injectable()
@@ -8,10 +8,10 @@ export class SubscriptionGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();
     const user = req.user;
-    const { subscription, hasActiveSubscription } =
-      await this.subscriptionService.readActiveSubscription(user.userId);
+    const subscription =
+      await this.subscriptionService.readActiveSubscriptionEntity(user.userId);
 
-    if (!hasActiveSubscription) {
+    if (!subscription) {
       return false;
     }
 

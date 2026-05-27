@@ -31,7 +31,7 @@ export class SubscriptionService {
           data: { 
             amountCents: plan.priceCents, 
             subscriptionId: subscription.id, 
-            paymentType: 'DEPOSIT', 
+            paymentType: 'SUBSCRIPTION', 
             provider: "abacatepay", 
             providerPaymentId: abacatePayment.data.id,
             qrCodeUrl: abacatePayment.data.brCodeBase64, 
@@ -63,7 +63,7 @@ export class SubscriptionService {
         data: { 
           amountCents: subscription.plan.priceCents, 
           subscriptionId: subscription.id, 
-          paymentType: 'DEPOSIT', 
+          paymentType: 'SUBSCRIPTION', 
           provider: "abacatepay", 
           providerPaymentId: abacatePayment.data.id,
           qrCodeUrl: abacatePayment.data.brCodeBase64, 
@@ -111,6 +111,22 @@ export class SubscriptionService {
       }
     }
 
+  }
+
+  async readActiveSubscriptionEntity(userId: string){ 
+    const subscription = await this.prismaService.subscription.findFirst({
+      where: { userId, status: "ACTIVE" },
+      include: { plan: true },
+    })
+
+    if(!subscription) return null
+
+    if(subscription.endDate && isBefore(subscription.endDate, Date.now())){
+      await this.prismaService.subscription.update({ where: { id: subscription.id }, data: { status:'EXPIRED' } } )
+      return null
+    }
+
+    return subscription
   }
 
   async readSubscriptionHistory(userId: string){ 
