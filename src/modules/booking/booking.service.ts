@@ -21,6 +21,8 @@ export class BookingService {
   ) {}
 
   async create(data: CreateBookingDTO, { userId }: JwtUserPayload) {
+    this.assertBookingDateMatchesTime(data);
+
     if (data.paymentType !== 'DEPOSIT') {
       throw new BadRequestException(
         'Use POST /booking/subscription para reservas com assinatura.',
@@ -74,6 +76,7 @@ export class BookingService {
     user: JwtUserPayload,
     data: CreateBookingDTO,
   ) {
+    this.assertBookingDateMatchesTime(data);
     const numberOfPeople = data.numberOfPeople ?? 1;
 
     if (subscription.creditsTotal <= 0) {
@@ -194,5 +197,19 @@ export class BookingService {
   private parseDate(dateStr: string): Date {
     const [year, month, day] = dateStr.split('-').map(Number);
     return new Date(year, month - 1, day);
+  }
+
+  private assertBookingDateMatchesTime(data: CreateBookingDTO) {
+    const [year, month, day] = data.bookingDate.split('-').map(Number);
+    const sameLocalDate =
+      data.bookingTime.getFullYear() === year &&
+      data.bookingTime.getMonth() === month - 1 &&
+      data.bookingTime.getDate() === day;
+
+    if (!sameLocalDate) {
+      throw new BadRequestException(
+        'Data de agendamento e horário de agendamento devem ser no mesmo dia.',
+      );
+    }
   }
 }
