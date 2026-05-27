@@ -82,7 +82,7 @@ export class AuthService {
     }
 
     async sendPasswordResetRequest( { email }: ResetPasswordRequestDTO ){ 
-      await supabase.auth.resetPasswordForEmail( email, { redirectTo: 'http://127.0.0.1:3001/auth/reset-password'})
+      await supabase.auth.resetPasswordForEmail( email, { redirectTo: process.env.PASSWORD_RESET_REDIRECT_URL ?? 'http://127.0.0.1:3001/auth/reset-password'})
       return { message: 'Email de recuperação de senha enviado. Cheque sua caixa de entrada para instruções.'}
     }
 
