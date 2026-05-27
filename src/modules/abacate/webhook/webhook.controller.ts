@@ -3,6 +3,7 @@ import {
   Controller,
   Headers,
   Post,
+  Query,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -17,14 +18,19 @@ export class WebhookController {
   @SkipThrottle()
   @Post()
   async webhook(
+    @Query('webhookSecret') webhookSecret: string,
     @Req() req: Request,
     @Headers('x-webhook-signature') signature: string,
   ) {
+    if (!this.webhookService.verifyWebhookSecret(webhookSecret)) {
+      throw new UnauthorizedException('Webhook secret invalido.');
+    }
+
     const rawBody = (req as any).rawBody?.toString();
-    if (!rawBody) throw new BadRequestException('Raw body não encontrado.');
+    if (!rawBody) throw new BadRequestException('Raw body nao encontrado.');
 
     if (!this.webhookService.verifyAbacateSignature(rawBody, signature)) {
-      throw new UnauthorizedException('Assinatura do webhook inválida.');
+      throw new UnauthorizedException('Assinatura do webhook invalida.');
     }
 
     const payload = JSON.parse(rawBody);

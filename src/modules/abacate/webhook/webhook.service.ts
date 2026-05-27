@@ -3,9 +3,13 @@ import { addMonths, isAfter } from 'date-fns';
 import crypto from 'node:crypto';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 
+const ABACATEPAY_PUBLIC_KEY =
+  't9dXRhHHo3yDEj5pVDYz0frf7q6bMKyMRmxxCPIPp3RCplBfXRxqlC6ZpiWmOqj4L63qEaeUOtrCI8P0VMUgo6iIga2ri9ogaHFs0WIIywSMg0q7RmBfybe1E5XJcfC4IW3alNqym0tXoAKkzvfEjZxV6bE0oG2zJrNNYmUCKZyV0KZ3JS8Votf9EAWWYdiDkMkpbMdPggfh1EqHlVkMiTady6jOR3hyzGEHrIz2Ret0xHKMbiqkr9HS1JhNHDX9';
+
 @Injectable()
 export class WebhookService {
   private readonly abacateWebhookSecret: string;
+  private readonly abacatePublicKey: string;
 
   constructor(private readonly prismaService: PrismaService) {
     const abacateWebhookSecret = process.env.ABACATE_WEBHOOK_SECRET;
@@ -14,6 +18,8 @@ export class WebhookService {
       throw new Error('Chave de webhook da AbacatePay não definida.');
     }
     this.abacateWebhookSecret = abacateWebhookSecret;
+    this.abacatePublicKey =
+      process.env.ABACATEPAY_PUBLIC_KEY ?? ABACATEPAY_PUBLIC_KEY;
   }
 
   async updatePayment(payload: any) {
@@ -100,24 +106,20 @@ export class WebhookService {
     });
   }
 
+  verifyWebhookSecret(webhookSecret?: string) {
+    return webhookSecret === this.abacateWebhookSecret;
+  }
+
   verifyAbacateSignature(rawBody: string, signatureFromHeader?: string) {
     if (!signatureFromHeader) return false;
 
-    const signature = signatureFromHeader.replace(/^sha256=/i, '');
-    const expectedBase64Signature = crypto
-      .createHmac('sha256', this.abacateWebhookSecret)
+    const expectedSignature = crypto
+      .createHmac('sha256', this.abacatePublicKey)
       .update(Buffer.from(rawBody, 'utf8'))
       .digest('base64');
-    const expectedHexSignature = crypto
-      .createHmac('sha256', this.abacateWebhookSecret)
-      .update(Buffer.from(rawBody, 'utf8'))
-      .digest('hex');
 
-    return (
-      this.safeCompare(expectedBase64Signature, signature) ||
-      this.safeCompare(expectedHexSignature, signature)
-    );
-  }
+    return this.safeCompare(expectedSignature, signatureFromHeader);
+  } 
 
   private safeCompare(expectedSignature: string, receivedSignature: string) {
     const expected = Buffer.from(expectedSignature);
