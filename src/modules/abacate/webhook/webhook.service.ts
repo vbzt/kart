@@ -1,98 +1,137 @@
 import { Injectable } from '@nestjs/common';
-import { addMonths } from 'date-fns';
+import { addMonths, isAfter } from 'date-fns';
+import crypto from 'node:crypto';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
-import crypto from "node:crypto";
 
 @Injectable()
 export class WebhookService {
-  private abacateKey
-  constructor(private readonly prismaService: PrismaService){
-    const abacateKey = process.env.ABACATE_WEBHOOK_SECRET;
+  private readonly abacateWebhookSecret: string;
 
-    if (!abacateKey) {
-      throw new Error('Chave da API AbacatePay não definida.')
+  constructor(private readonly prismaService: PrismaService) {
+    const abacateWebhookSecret = process.env.ABACATE_WEBHOOK_SECRET;
+
+    if (!abacateWebhookSecret) {
+      throw new Error('Chave de webhook da AbacatePay não definida.');
     }
-    this.abacateKey = abacateKey
+    this.abacateWebhookSecret = abacateWebhookSecret;
   }
 
-  async updatePayment(payload: any, rawBody: string){ 
-        const providerPaymentId = payload?.data?.pixQrCode?.id
-        if(!providerPaymentId) return { received: true }
+  async updatePayment(payload: any) {
+    const transparent = payload?.data?.transparent;
+    const providerPaymentId = transparent?.id;
+    if (!providerPaymentId) return { received: true, ignored: true };
 
-        return await this.prismaService.$transaction(async (tx) => {
-          const payment = await tx.payment.findFirst({
-            where: { provider: 'abacatepay', providerPaymentId }
-          })
+    return this.prismaService.$transaction(async (tx) => {
+      const payment = await tx.payment.findFirst({
+        where: { provider: 'abacatepay', providerPaymentId },
+      });
 
-          if(!payment) return { received: true, ignored: true }
+      if (!payment) return { received: true, ignored: true };
 
-          await tx.payment.updateMany({
-            where: {
-              id: payment.id,
-              OR: [{ status: { not: 'PAID' } }, { paidAt: null }],
+      const paidAt = transparent?.updatedAt
+        ? new Date(transparent.updatedAt)
+        : new Date();
+
+      const updatedPayment = await tx.payment.updateMany({
+        where: {
+          id: payment.id,
+          OR: [{ status: { not: 'PAID' } }, { paidAt: null }],
+        },
+        data: {
+          status: 'PAID',
+          paidAt,
+          receiptUrl: transparent?.receiptUrl,
+          providerMetadata: payload.data,
+        },
+      });
+
+      if (updatedPayment.count !== 1) {
+        return { received: true, duplicate: true };
+      }
+
+      if (payment.bookingId) {
+        await tx.booking.updateMany({
+          where: { id: payment.bookingId, status: 'PENDING' },
+          data: { status: 'CONFIRMED' },
+        });
+      }
+
+      if (payment.subscriptionId) {
+        const subscription = await tx.subscription.findUnique({
+          where: { id: payment.subscriptionId },
+          include: { plan: true },
+        });
+
+        if (subscription && subscription.status !== 'CANCELLED') {
+          const isFirstActivation =
+            subscription.status !== 'ACTIVE' ||
+            !subscription.startDate ||
+            !subscription.endDate;
+          const nextStart = isFirstActivation
+            ? paidAt
+            : this.getRenewalStart(subscription.endDate, paidAt);
+          const nextEnd = addMonths(nextStart, 1);
+
+          await tx.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              status: 'ACTIVE',
+              startDate: subscription.startDate ?? paidAt,
+              endDate: nextEnd,
+              creditsTotal: isFirstActivation
+                ? subscription.creditsTotal
+                : { increment: subscription.plan.creditsPerMonth },
             },
-            data: { status: 'PAID', paidAt: new Date() }
-          })
+          });
 
-          const freshPayment = await tx.payment.findUnique({ where: { id: payment.id } })
-          const paidAt = freshPayment?.paidAt ?? new Date()
+          await tx.creditTransaction.create({
+            data: {
+              subscriptionId: subscription.id,
+              type: 'PURCHASE',
+              description: isFirstActivation
+                ? 'Assinatura ativada por pagamento Pix.'
+                : 'Créditos renovados por pagamento Pix.',
+            },
+          });
+        }
+      }
 
-          if(payment.bookingId){ 
-            const updated = await tx.booking.updateMany({
-              where: { id: payment.bookingId, status: 'PENDING' },
-              data: { status: 'CONFIRMED' }
-            })
-            if(updated.count > 0) {
-              console.log(`Booking ${payment.bookingId} pago. Atualizado com sucesso.`)
-            }
-          }
-          
-          if(payment.subscriptionId){ 
-            const subscription = await tx.subscription.findUnique({ where: { id: payment.subscriptionId } })
-            if(subscription){
-              const nextStart = paidAt
-              const nextEnd = addMonths(nextStart, 1)
+      return { received: true };
+    });
+  }
 
-              const data: { status: 'ACTIVE'; startDate?: Date; endDate?: Date } = { status: 'ACTIVE' }
-              if(!subscription.startDate) data.startDate = nextStart
-              if(!subscription.endDate) data.endDate = nextEnd
+  verifyAbacateSignature(rawBody: string, signatureFromHeader?: string) {
+    if (!signatureFromHeader) return false;
 
-              const updated = await tx.subscription.updateMany({
-                where: {
-                  id: payment.subscriptionId,
-                  status: { not: 'CANCELLED' },
-                  OR: [
-                    { status: { not: 'ACTIVE' } },
-                    { startDate: null },
-                    { endDate: null },
-                  ]
-                },
-                data
-              })
+    const signature = signatureFromHeader.replace(/^sha256=/i, '');
+    const expectedBase64Signature = crypto
+      .createHmac('sha256', this.abacateWebhookSecret)
+      .update(Buffer.from(rawBody, 'utf8'))
+      .digest('base64');
+    const expectedHexSignature = crypto
+      .createHmac('sha256', this.abacateWebhookSecret)
+      .update(Buffer.from(rawBody, 'utf8'))
+      .digest('hex');
 
-              if(updated.count > 0) {
-                console.log(`Inscrição ${payment.subscriptionId} paga. Atualizada com sucesso.`)
-              }
-            }
-          }
+    return (
+      this.safeCompare(expectedBase64Signature, signature) ||
+      this.safeCompare(expectedHexSignature, signature)
+    );
+  }
 
-          return { received: true }
-        })
-  } 
+  private safeCompare(expectedSignature: string, receivedSignature: string) {
+    const expected = Buffer.from(expectedSignature);
+    const received = Buffer.from(receivedSignature);
+    return (
+      expected.length === received.length &&
+      crypto.timingSafeEqual(expected, received)
+    );
+  }
 
-  verifyAbacateSignature(rawBody: string, signatureFromHeader: string) {
-    const bodyBuffer = Buffer.from(rawBody, "utf8")
-
-    const expectedSig = crypto
-      .createHmac("sha256", this.abacateKey)
-      .update(bodyBuffer)
-      .digest("base64");
-
-    const A = Buffer.from(expectedSig);
-    const B = Buffer.from(signatureFromHeader);
-
-    return A.length === B.length && crypto.timingSafeEqual(A, B);
-}
-
-
+  private getRenewalStart(currentEndDate: Date | null, paidAt: Date) {
+    if (currentEndDate && isAfter(currentEndDate, paidAt)) {
+      return currentEndDate;
+    }
+    return paidAt;
+  }
 }

@@ -3,7 +3,7 @@ import { Min, IsInt } from 'class-validator';
 
 export class CreatePixDTO {
   @IsInt()
-  @Min(0)
+  @Min(1)
   amount: number;
 
 }

@@ -1,33 +1,38 @@
-import { Body, Controller, Headers, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
-import { WebhookService } from './webhook.service';
-import type { Request } from 'express';
+import {
+  BadRequestException,
+  Controller,
+  Headers,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
+import type { Request } from 'express';
+import { WebhookService } from './webhook.service';
 
 @Controller('webhook/abacatepay')
 export class WebhookController {
-  private abacateKey
-
-  constructor(private readonly webhookService: WebhookService) {
-    const abacateKey = process.env.ABACATE_WEBHOOK_SECRET;
-
-    if (!abacateKey) {
-      throw new Error('Chave da API AbacatePay não definida.')
-    }
-    this.abacateKey = abacateKey
-  }
+  constructor(private readonly webhookService: WebhookService) {}
 
   @SkipThrottle()
-  @Post() 
-  async webhook(@Query('webhookSecret') webhookSecret: string, @Req() req: Request, @Headers('x-webhook-signature') signature: string,){
-    if(webhookSecret !== this.abacateKey) throw new UnauthorizedException()
-    const rawBody = (req as any).rawBody.toString()
-    // if(!this.webhookService.verifyAbacateSignature(rawBody, signature)) throw new UnauthorizedException()
-     const payload = JSON.parse(rawBody)
-    if(payload.event === 'billing.paid'){ 
+  @Post()
+  async webhook(
+    @Req() req: Request,
+    @Headers('x-webhook-signature') signature: string,
+  ) {
+    const rawBody = (req as any).rawBody?.toString();
+    if (!rawBody) throw new BadRequestException('Raw body não encontrado.');
 
-      console.log('billing.paid')
-      return await this.webhookService.updatePayment(payload, rawBody)
+    if (!this.webhookService.verifyAbacateSignature(rawBody, signature)) {
+      throw new UnauthorizedException('Assinatura do webhook inválida.');
     }
-    return { received: true }
+
+    const payload = JSON.parse(rawBody);
+
+    if (payload.event === 'transparent.completed') {
+      return this.webhookService.updatePayment(payload);
+    }
+
+    return { received: true };
   }
 }
