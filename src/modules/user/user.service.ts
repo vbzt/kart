@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDTO } from './dto/create-user.dto';
-import * as bcrypt from 'bcrypt';
 import { EditUserDTO } from './dto/edit-user.dto';
 
 @Injectable()
@@ -43,12 +42,15 @@ export class UserService {
   }
 
   async update( data: EditUserDTO, id: string ){ 
+    await this.readOne(id)
     if(data.email){
-      const existingUser = await this.readOne(data.email)
+      const existingUser = await this.prismaService.user.findFirst({
+        where: { email: data.email, id: { not: id } },
+      })
       if (existingUser) throw new ConflictException('Usuário com este e-mail já existe.')
     }
 
-    await this.prismaService.user.update({ where: { id }, data })
+    return this.prismaService.user.update({ where: { id }, data })
   }
 
   async delete(id: string){ 
