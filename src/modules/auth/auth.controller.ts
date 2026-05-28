@@ -21,10 +21,14 @@ import { LoginDTO } from './dto/login.dto';
 import { ResetPasswordRequestDTO } from './dto/reset-password-request.dto';
 import { ResetPasswordDTO } from './dto/reset-password.dto';
 import { SignUpDTO } from './dto/sign-up.dto';
+import { UserService } from '../user/user.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @Throttle({ default: { limit: 5, ttl: 60 } })
   @Post('/register')
@@ -54,8 +58,8 @@ export class AuthController {
   @Post('/logout')
   async signOut(@Res({ passthrough: true }) response: Response) {
     const data = await this.authService.signOut();
-    response.clearCookie('refresh_token');
-    return data.message;
+    this.clearRefreshCookie(response);
+    return data.message; 
   }
 
   @Throttle({ default: { limit: 5, ttl: 60 } })
@@ -88,7 +92,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('/me')
   async me(@CurrentUser() user: JwtUserPayload) {
-    return user;
+    const profile = await this.userService.readMe(user.userId);
+
+    return {
+      userId: profile.id,
+      email: profile.email,
+      name: profile.name,
+      role: profile.role,
+    };
   }
 
   private setRefreshCookie(response: Response, refreshToken?: string) {
@@ -99,6 +110,14 @@ export class AuthController {
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 3600000,
+    });
+  }
+
+  private clearRefreshCookie(response: Response) {
+    response.clearCookie('refresh_token', {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
     });
   }
 }
