@@ -21,6 +21,11 @@ export class BookingController {
     return this.bookingService.readUserBookings(user)
   }
 
+  @Get('/:id/payment-status')
+  async readPaymentStatus(@ParamId() id: string, @CurrentUser('userId') userId: string) {
+    return this.bookingService.readPaymentStatus(id, userId)
+  }
+
   @Get("/:id")
   async readOne(@ParamId() id: string, @CurrentUser('userId') userId: string){ 
     return this.bookingService.readOne(id, userId)

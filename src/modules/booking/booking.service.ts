@@ -59,6 +59,10 @@ export class BookingService {
   async readOne(id: string, userId: string) {
     const booking = await this.prismaService.booking.findFirst({
       where: { id, userId },
+      include: {
+        payments: true,
+        service: true,
+      },
     });
     if (!booking) throw new NotFoundException('Este agendamento não existe.');
     return booking;
@@ -67,8 +71,34 @@ export class BookingService {
   async readUserBookings(user: JwtUserPayload) {
     return this.prismaService.booking.findMany({
       where: { userId: user.userId },
+      include: {
+        payments: {
+          orderBy: { createdAt: 'desc' },
+        },
+        service: true,
+      },
       orderBy: [{ bookingDate: 'desc' }, { bookingTime: 'desc' }],
     });
+  }
+
+  async readPaymentStatus(id: string, userId: string) {
+    const payment = await this.prismaService.payment.findFirst({
+      where: {
+        booking: { id, userId },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        paidAt: true,
+        paymentUrl: true,
+        qrCodeUrl: true,
+        amountCents: true,
+      },
+    });
+
+    if (!payment) throw new NotFoundException('Este pagamento não existe.');
+    return payment;
   }
 
   async createBookingWithCredits(
